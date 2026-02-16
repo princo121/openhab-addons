@@ -1,6 +1,18 @@
-package org.openhab.binding.teslafleet.internal.handler;
+/*
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.teslafleetapi.internal.handler;
 
-import static org.openhab.binding.teslafleet.internal.TeslaFleetBindingConstants.*;
+import static org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIBindingConstants.*;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -9,9 +21,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.teslafleet.internal.TeslaFleetBridgeConfiguration;
-import org.openhab.binding.teslafleet.internal.api.TeslaFleetApi;
-import org.openhab.binding.teslafleet.internal.auth.TeslaFleetAuthService;
+import org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIAuthService;
+import org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIBridgeConfiguration;
+import org.openhab.binding.teslafleetapi.internal.TeslaFleetApi;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -25,26 +37,26 @@ import org.slf4j.LoggerFactory;
 /**
  * TeslaFleetBridgeHandler
  *
- * Gestisce:
- *  - Lettura della configurazione del bridge (region, clientId, clientSecret, redirectUri, refreshToken, polling)
- *  - Ciclo di polling per "sanity check" con l'API (es. /vehicles) e aggiornamento stato ONLINE/OFFLINE
- *  - Refresh automatico dell'access token quando necessario
- *  - Un accessor per fornire il bearer token ai child handler (es. VehicleHandler)
+ * Gestisce: - Lettura della configurazione del bridge (region, clientId,
+ * clientSecret, redirectUri, refreshToken, polling) - Ciclo di polling per
+ * "sanity check" con l'API (es. /vehicles) e aggiornamento stato ONLINE/OFFLINE
+ * - Refresh automatico dell'access token quando necessario - Un accessor per
+ * fornire il bearer token ai child handler (es. VehicleHandler)
  *
- * Requisiti API:
- *  - Autenticazione OAuth2 con header "Authorization: Bearer <token>"
- *  - Scopes appropriati in base alle funzioni usate (es. vehicle_device_data, vehicle_location, vehicle_cmds)
+ * Requisiti API: - Autenticazione OAuth2 con header "Authorization: Bearer
+ * <token>" - Scopes appropriati in base alle funzioni usate (es.
+ * vehicle_device_data, vehicle_location, vehicle_cmds)
  *
  * Vedi documentazione Tesla Fleet API per dettagli di auth e scopes.
  *
  * @author You
  */
 @NonNullByDefault
-public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
+public class TeslaFleetAPIBridgeHandler extends BaseBridgeHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(TeslaFleetBridgeHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(TeslaFleetAPIBridgeHandler.class);
 
-    private final TeslaFleetAuthService authService;
+    private final TeslaFleetAPIAuthService authService;
     private final TeslaFleetApi api;
 
     private @Nullable ScheduledFuture<?> pollingJob;
@@ -56,7 +68,7 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
 
     private volatile int pollingIntervalSeconds = 60;
 
-    public TeslaFleetBridgeHandler(Bridge bridge, TeslaFleetAuthService authService, TeslaFleetApi api) {
+    public TeslaFleetAPIBridgeHandler(Bridge bridge, TeslaFleetAPIAuthService authService, TeslaFleetApi api) {
         super(bridge);
         this.authService = Objects.requireNonNull(authService);
         this.api = Objects.requireNonNull(api);
@@ -71,7 +83,8 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
         logger.debug("Initializing TeslaFleetBridgeHandler for thing {}", getThing().getUID());
 
         final Thing thing = getThing();
-        final TeslaFleetBridgeConfiguration cfg = thing.getConfiguration().as(TeslaFleetBridgeConfiguration.class);
+        final TeslaFleetAPIBridgeConfiguration cfg = thing.getConfiguration()
+                .as(TeslaFleetAPIBridgeConfiguration.class);
 
         // Validate mandatory config
         if (cfg == null) {
@@ -94,7 +107,8 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
 
         // First token acquisition/refresh (if we already have a refresh token)
         if (this.refreshToken == null) {
-            // In molti flussi third‑party sarà la servlet di auth a popolare il refreshToken sul bridge
+            // In molti flussi third‑party sarà la servlet di auth a popolare il
+            // refreshToken sul bridge
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                     "Authorization required (no refresh token present)");
             schedulePolling(false); // mantieni polling leggero per check di stato/attesa autorizzazione
@@ -105,7 +119,8 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
             // Se non riusciamo a generare l’access token, restiamo OFFLINE
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                     "Unable to obtain access token from Tesla");
-            // Pianifica retry periodico: l’utente potrebbe completare l’autorizzazione o correggere le credenziali
+            // Pianifica retry periodico: l’utente potrebbe completare l’autorizzazione o
+            // correggere le credenziali
             schedulePolling(false);
             return;
         }
@@ -114,8 +129,7 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
         if (checkConnectivity()) {
             updateStatus(ThingStatus.ONLINE);
         } else {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "Cannot reach Tesla Fleet API");
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Cannot reach Tesla Fleet API");
         }
 
         // Start polling loop
@@ -139,7 +153,8 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         logger.debug("Bridge received command on channel {}: {}", channelUID, command);
-        // Tipicamente il bridge non espone canali comandabili; i comandi vanno ai VehicleHandler.
+        // Tipicamente il bridge non espone canali comandabili; i comandi vanno ai
+        // VehicleHandler.
         // Puoi eventualmente gestire un canale ‘refresh’ o simili.
     }
 
@@ -177,8 +192,7 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
                     updateStatus(ThingStatus.ONLINE);
                 }
             } else {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                        "Connectivity check failed");
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Connectivity check failed");
             }
         } catch (Exception ex) {
             logger.info("Unexpected error during polling status: {}", ex.getMessage(), ex);
@@ -220,7 +234,7 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
         }
 
         try {
-            final TeslaFleetAuthService.TokenResponse tr = authService.refreshAccessToken(currentRefresh);
+            final TeslaFleetAPIAuthService.TokenResponse tr = authService.refreshAccessToken(currentRefresh);
             if (tr == null || tr.accessToken() == null) {
                 return false;
             }
@@ -231,7 +245,12 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
                 // Alcuni provider ruotano anche il refresh token
                 this.refreshToken = tr.refreshToken();
                 // salva in thing config (persisti la rotazione)
-                persistRefreshToken(this.refreshToken);
+                final String rotated = tr.refreshToken();
+                if (rotated != null && !rotated.isBlank()) {
+                    this.refreshToken = rotated;
+                    persistRefreshToken(rotated);
+                }
+                // persistRefreshToken(this.refreshToken);
             }
             logger.debug("Obtained new Tesla Fleet access token; expires in {}s", tr.expiresInSec());
             return true;
@@ -267,7 +286,8 @@ public class TeslaFleetBridgeHandler extends BaseBridgeHandler {
     // ------------------------------------------
 
     private static @Nullable String trimOrNull(@Nullable String s) {
-        if (s == null) return null;
+        if (s == null)
+            return null;
         final String t = s.trim();
         return t.isEmpty() ? null : t;
     }

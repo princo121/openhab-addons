@@ -1,18 +1,20 @@
-package org.openhab.binding.teslafleet.internal;
+/*
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.teslafleetapi.internal;
 
 import org.openhab.core.thing.ThingTypeUID;
 
-/**
- * TeslaFleetBindingConstants
- *
- * Contiene:
- *   - ID del binding
- *   - Thing Type UIDs (Bridge + Vehicle)
- *   - Nomi dei canali (da usare nei file thing-types.xml e nei handler)
- *
- * Lo schema segue gli standard openHAB per pulizia e consistenza.
- */
-public final class TeslaFleetBindingConstants {
+public final class TeslaFleetAPIBindingConstants {
 
     // ------------------------------------------------------------------------
     // Binding ID
@@ -22,11 +24,9 @@ public final class TeslaFleetBindingConstants {
     // ------------------------------------------------------------------------
     // Thing Type UIDs
     // ------------------------------------------------------------------------
-    public static final ThingTypeUID THING_TYPE_BRIDGE =
-            new ThingTypeUID(BINDING_ID, "bridge");
+    public static final ThingTypeUID THING_TYPE_BRIDGE = new ThingTypeUID(BINDING_ID, "bridge");
 
-    public static final ThingTypeUID THING_TYPE_VEHICLE =
-            new ThingTypeUID(BINDING_ID, "vehicle");
+    public static final ThingTypeUID THING_TYPE_VEHICLE = new ThingTypeUID(BINDING_ID, "vehicle");
 
     // ------------------------------------------------------------------------
     // Channel IDs (per i Vehicle Thing)
@@ -38,7 +38,7 @@ public final class TeslaFleetBindingConstants {
     public static final String CHANNEL_SOC = "stateOfCharge";
     public static final String CHANNEL_BATTERY_RANGE = "batteryRangeKm";
     public static final String CHANNEL_ODOMETER = "odometerKm";
-    public static final String CHANNEL_STATE = "vehicleState";           // es. online/offline/asleep
+    public static final String CHANNEL_STATE = "vehicleState"; // es. online/offline/asleep
 
     // Posizione
     public static final String CHANNEL_LATITUDE = "lat";
@@ -68,7 +68,7 @@ public final class TeslaFleetBindingConstants {
     // ------------------------------------------------------------------------
     // Constructor privato per evitare istanziazione
     // ------------------------------------------------------------------------
-    private TeslaFleetBindingConstants() {
+    private TeslaFleetAPIBindingConstants() {
         // No instance
     }
 }

@@ -12,12 +12,8 @@
  */
 package org.openhab.binding.teslafleetapi.internal;
 
-import static org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIBindingConstants.*;
-
-import java.util.Set;
-
-import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.teslafleetapi.internal.handler.*;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -25,29 +21,25 @@ import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
 import org.osgi.service.component.annotations.Component;
 
-/**
- * The {@link TeslaFleetAPIHandlerFactory} is responsible for creating things and thing
- * handlers.
- *
- * @author Mirko Valenti - Initial contribution
- */
-@NonNullByDefault
-@Component(configurationPid = "binding.teslafleetapi", service = ThingHandlerFactory.class)
+@Component(service = ThingHandlerFactory.class, configurationPid = "binding.teslafleetapi")
 public class TeslaFleetAPIHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_SAMPLE);
-
     @Override
-    public boolean supportsThingType(ThingTypeUID thingTypeUID) {
-        return SUPPORTED_THING_TYPES_UIDS.contains(thingTypeUID);
+    public boolean supportsThingType(ThingTypeUID type) {
+        return type.equals(TeslaFleetAPIBindingConstants.THING_TYPE_BRIDGE)
+                || type.equals(TeslaFleetAPIBindingConstants.THING_TYPE_VEHICLE);
     }
 
     @Override
-    protected @Nullable ThingHandler createHandler(Thing thing) {
-        ThingTypeUID thingTypeUID = thing.getThingTypeUID();
+    public ThingHandler createHandler(Thing thing) {
+        ThingTypeUID type = thing.getThingTypeUID();
 
-        if (THING_TYPE_SAMPLE.equals(thingTypeUID)) {
-            return new TeslaFleetAPIHandler(thing);
+        if (type.equals(TeslaFleetAPIBindingConstants.THING_TYPE_BRIDGE)) {
+            return new TeslaFleetAPIBridgeHandler((Bridge) thing, new TeslaFleetAPIAuthService(), new TeslaFleetApi());
+        }
+
+        if (type.equals(TeslaFleetAPIBindingConstants.THING_TYPE_VEHICLE)) {
+            return new TeslaFleetAPIVehicleHandler(thing);
         }
 
         return null;

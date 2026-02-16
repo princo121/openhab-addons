@@ -1,32 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <thing:thing-descriptions bindingId="teslafleet"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:thing="http://openhab.org/schemas/thing-description/v1.0.0"
-    xsi:schemaLocation="http://openhab.org/schemas/thing-description/v1.0.0
-                        http://openhab.org/schemas/thing-description-1.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description/v1.0.0/thing-description.xsd">
 
-    <bridge-type id="bridge">
-        <label>Tesla Fleet Bridge</label>
-        <description>Handles authentication and connectivity to Tesla Fleet API</description>
+	<bridge-type id="bridge">
+		<label>Tesla Fleet Bridge</label>
+		<description>Handles authentication and connectivity to Tesla Fleet API</description>
 
-        <config-description>
-            <parameter name="region" type="text" required="true"/>
-            <parameter name="clientId" type="text" required="false"/>
-            <parameter name="clientSecret" type="text" required="false"/>
-            <parameter name="redirectUri" type="text" required="false"/>
-            <parameter name="refreshToken" type="text" required="false"/>
-            <parameter name="pollingIntervalSeconds" type="integer" min="15"/>
-        </config-description>
-    </bridge-type>
+		<config-description>
+			<parameter name="region" type="text" required="true"/>
+			<parameter name="clientId" type="text" required="false"/>
+			<parameter name="clientSecret" type="text" required="false"/>
+			<parameter name="redirectUri" type="text" required="false"/>
+			<parameter name="refreshToken" type="text" required="false"/>
+			<parameter name="pollingIntervalSeconds" type="integer" min="15"/>
+		</config-description>
+	</bridge-type>
 
-    <thing-type id="vehicle">
-        <label>Tesla Vehicle</label>
-        <description>A Tesla vehicle connected via Tesla Fleet API</description>
-        <channels>
-            <channel id="vehicleName" typeId="string"/>
-            <channel id="vin" typeId="string"/>
-            <channel id="stateOfCharge" typeId="number"/>
-        </channels>
-    </thing-type>
+	<thing-type id="vehicle">
+		<label>Tesla Vehicle</label>
+		<description>A Tesla vehicle connected via Tesla Fleet API</description>
+		<channels>
+			<channel id="vehicleName" typeId="string"/>
+			<channel id="vin" typeId="string"/>
+			<channel id="stateOfCharge" typeId="number"/>
+		</channels>
+	</thing-type>
 
 </thing:thing-descriptions>

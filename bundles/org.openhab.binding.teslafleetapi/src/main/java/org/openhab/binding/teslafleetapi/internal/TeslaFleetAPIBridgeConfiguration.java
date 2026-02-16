@@ -1,30 +1,26 @@
-package org.openhab.binding.teslafleet.internal;
+/*
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.teslafleetapi.internal;
 
 import org.eclipse.jdt.annotation.Nullable;
 
-/**
- * Configuration class for the Tesla Fleet API Bridge.
- *
- * All fields map 1:1 to the configuration parameters of the Bridge Thing.
- * These values are injected automatically by openHAB from the thing configuration.
- *
- * Typical fields:
- *   - region:            API region ("na", "eu", "cn")
- *   - clientId:          OAuth client id
- *   - clientSecret:      OAuth client secret
- *   - redirectUri:       Redirect URL used during authorization
- *   - refreshToken:      OAuth refresh token (persisted once obtained)
- *   - pollingIntervalSeconds: how often the bridge polls Tesla for sanity/online checks
- *
- * This class must be a pure POJO: getters/setters are not required.
- */
-public class TeslaFleetBridgeConfiguration {
+public class TeslaFleetAPIBridgeConfiguration {
 
     /**
      * Region of the Tesla Fleet API cluster. Typical values:
-     *   - "na": North America
-     *   - "eu": Europe
-     *   - "cn": China
+     * - "na": North America
+     * - "eu": Europe
+     * - "cn": China
      */
     public @Nullable String region;
 
