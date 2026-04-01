@@ -44,6 +44,7 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.homekit.internal.action.HomekitPairingActions;
+import org.openhab.binding.homekit.internal.discovery.HomekitMdnsDiscoveryParticipant;
 import org.openhab.binding.homekit.internal.dto.Accessories;
 import org.openhab.binding.homekit.internal.dto.Accessory;
 import org.openhab.binding.homekit.internal.dto.Characteristic;
@@ -94,6 +95,8 @@ public abstract class HomekitBaseAccessoryHandler extends BaseThingHandler imple
     private final Map<Long, Accessory> accessories = new ConcurrentHashMap<>();
     private final HomekitKeyStore keyStore;
     private final AtomicBoolean sessionUpgradeInProgress = new AtomicBoolean(false);
+
+    protected final HomekitMdnsDiscoveryParticipant discoveryParticipant;
 
     private boolean isConfigured = false;
     private int connectionAttemptDelay = MIN_CONNECTION_ATTEMPT_DELAY_SECONDS;
@@ -171,18 +174,21 @@ public abstract class HomekitBaseAccessoryHandler extends BaseThingHandler imple
     }
 
     public HomekitBaseAccessoryHandler(Thing thing, HomekitTypeProvider typeProvider, HomekitKeyStore keyStore,
-            TranslationProvider translationProvider, Bundle bundle) {
+            TranslationProvider translationProvider, Bundle bundle,
+            HomekitMdnsDiscoveryParticipant discoveryParticipant) {
         super(thing);
         this.typeProvider = typeProvider;
         this.keyStore = keyStore;
         this.i18nProvider = translationProvider;
         this.bundle = bundle;
+        this.discoveryParticipant = discoveryParticipant;
     }
 
     @Override
     public void dispose() {
         notReadyThings.clear();
         eventedCharacteristics.clear();
+        polledCharacteristics.clear();
         accessories.clear();
         cancelRefreshTasks();
         if (!isBridgedAccessory) {
@@ -200,6 +206,16 @@ public abstract class HomekitBaseAccessoryHandler extends BaseThingHandler imple
             transport.close();
         }
         ipTransport = null;
+
+        // see https://github.com/openhab/openhab-addons/issues/19979 => ensure the state is fully reset
+        // on dispose() in case initialize() is subsequently called again on the same handler instance
+        accessoryId = null;
+        rwService = null;
+        isConfigured = false;
+        connectionAttemptDelay = MIN_CONNECTION_ATTEMPT_DELAY_SECONDS;
+        throttler.reset();
+        sessionUpgradeInProgress.set(false);
+
         super.dispose();
     }
 
@@ -555,7 +571,7 @@ public abstract class HomekitBaseAccessoryHandler extends BaseThingHandler imple
      *
      * @return OK or ERROR with reason
      */
-    private String unpairInner() {
+    protected String unpairInner() {
         if (isBridgedAccessory) {
             logger.warn("{} forbidden to unpair a bridged accessory", thing.getUID());
             return ACTION_RESULT_ERROR_FORMAT.formatted("bridged accessory");
