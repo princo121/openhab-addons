@@ -1,26 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<thing:thing-descriptions bindingId="teslafleet"
+<thing:thing-descriptions bindingId="teslafleetapi"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
-	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description/v1.0.0/thing-description.xsd">
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
+
+	<!-- Tesla Fleet API -->
 	<bridge-type id="bridge">
+
 		<label>Tesla Fleet Bridge</label>
-		<description>Handles authentication and connectivity to Tesla Fleet API</description>
+		<description>Handles authentication and connectivity to Tesla Fleet
+			API
+		</description>
+
+		<representation-property>clientId</representation-property>
 
 		<config-description>
-			<parameter name="region" type="text" required="true"/>
-			<parameter name="clientId" type="text" required="false"/>
-			<parameter name="clientSecret" type="text" required="false"/>
-			<parameter name="redirectUri" type="text" required="false"/>
-			<parameter name="refreshToken" type="text" required="false"/>
-			<parameter name="pollingIntervalSeconds" type="integer" min="15"/>
+			<parameter name="region" type="text" required="true">
+				<label>Region</label>
+				<description>Select Region account.</description>
+			</parameter>
+			<parameter name="clientId" type="text" required="true">
+				<label>Application Client ID</label>
+				<description>This is the Client ID provided by Tesla when you add a
+					new Application for openHAB to your Tesla
+					Account.
+				</description>
+			</parameter>
+			<parameter name="clientSecret" type="text" required="true">
+				<label>Application Client Secret</label>
+				<description>This is the Client Secret provided by Tesla when you
+					add
+					a new Application for openHAB to your
+					Tesla
+					Account.
+				</description>
+			</parameter>
+			<parameter name="redirectUri" type="text" required="true"/>
+			<parameter name="refreshToken" type="text" required="true"/>
+			<parameter name="pollingIntervalSeconds" type="integer" min="300">
+				<default>600</default>
+				<label>Connect Refresh Period (seconds)</label>
+				<description>This is the frequency of the polling requests to the
+					Tesla Fleet API.
+				</description>
+			</parameter>
+
 		</config-description>
 	</bridge-type>
 
 	<thing-type id="vehicle">
 		<label>Tesla Vehicle</label>
-		<description>A Tesla vehicle connected via Tesla Fleet API</description>
+		<description>A Tesla vehicle connected via Tesla Fleet API
+		</description>
 		<channels>
 			<channel id="vehicleName" typeId="string"/>
 			<channel id="vin" typeId="string"/>

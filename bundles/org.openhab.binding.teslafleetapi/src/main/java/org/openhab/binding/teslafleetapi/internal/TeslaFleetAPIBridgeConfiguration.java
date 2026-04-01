@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.teslafleetapi.internal;
 
-import org.eclipse.jdt.annotation.Nullable;
-
 public class TeslaFleetAPIBridgeConfiguration {
 
     /**
@@ -22,33 +20,27 @@ public class TeslaFleetAPIBridgeConfiguration {
      * - "eu": Europe
      * - "cn": China
      */
-    public @Nullable String region;
+    public String region;
 
     /**
      * OAuth Client ID of the registered Tesla application.
      */
-    public @Nullable String clientId;
+    public String clientId;
 
     /**
      * OAuth Client Secret of the registered Tesla application.
      */
-    public @Nullable String clientSecret;
+    public String clientSecret;
 
     /**
      * Redirect URI configured in the Tesla OAuth application,
      * used during the authorization flow.
      */
-    public @Nullable String redirectUri;
-
-    /**
-     * Refresh token obtained after completing the OAuth authorization flow.
-     * Stored persistently once the user authorizes the bridge.
-     */
-    public @Nullable String refreshToken;
+    public String redirectUri;
 
     /**
      * Polling interval for internal status checks (seconds).
-     * Default is 60 if not specified.
+     * Default is 399 if not specified.
      */
-    public int pollingIntervalSeconds = 60;
+    public int pollingIntervalSeconds = 300;
 }

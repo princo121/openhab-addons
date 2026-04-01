@@ -21,6 +21,17 @@ public final class TeslaFleetAPIBindingConstants {
     // ------------------------------------------------------------------------
     public static final String BINDING_ID = "teslafleet";
 
+    // List of Spotify services related urls, information
+
+    // List of Spotify services related urls, information
+
+    public static final String TESLA_ACCOUNT_URL = "https://auth.tesla.com";
+    public static final String TESLA_AUTHORIZE_URL = TESLA_ACCOUNT_URL + "/oauth2/v3/token";
+    public static final String TESLA_API_TOKEN_URL = TESLA_ACCOUNT_URL + "";
+
+    // Authorization related Servlet and resources aliases.
+    public static final String TESLA_ALIAS = "/teslaconnect";
+
     // ------------------------------------------------------------------------
     // Thing Type UIDs
     // ------------------------------------------------------------------------

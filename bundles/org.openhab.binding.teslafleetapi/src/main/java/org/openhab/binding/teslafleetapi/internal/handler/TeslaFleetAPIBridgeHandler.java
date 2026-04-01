@@ -14,19 +14,24 @@ package org.openhab.binding.teslafleetapi.internal.handler;
 
 import static org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIBindingConstants.*;
 
+import java.io.IOException;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIAuthService;
 import org.openhab.binding.teslafleetapi.internal.TeslaFleetAPIBridgeConfiguration;
 import org.openhab.binding.teslafleetapi.internal.TeslaFleetApi;
+import org.openhab.core.auth.client.oauth2.AccessTokenResponse;
+import org.openhab.core.auth.client.oauth2.OAuthClientService;
+import org.openhab.core.auth.client.oauth2.OAuthException;
+import org.openhab.core.auth.client.oauth2.OAuthFactory;
+import org.openhab.core.auth.client.oauth2.OAuthResponseException;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
-import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
@@ -58,6 +63,8 @@ public class TeslaFleetAPIBridgeHandler extends BaseBridgeHandler {
 
     private final TeslaFleetAPIAuthService authService;
     private final TeslaFleetApi api;
+    private final OAuthFactory oAuthFactory;
+    private final HttpClient httpClient;
 
     private @Nullable ScheduledFuture<?> pollingJob;
 
@@ -68,10 +75,11 @@ public class TeslaFleetAPIBridgeHandler extends BaseBridgeHandler {
 
     private volatile int pollingIntervalSeconds = 60;
 
-    public TeslaFleetAPIBridgeHandler(Bridge bridge, TeslaFleetAPIAuthService authService, TeslaFleetApi api) {
+    public TeslaFleetAPIBridgeHandler(Bridge bridge, OAuthFactory oAuthFactory, HttpClient httpClient,
+            TeslaFleetAPIAuthService authService) {
         super(bridge);
-        this.authService = Objects.requireNonNull(authService);
-        this.api = Objects.requireNonNull(api);
+        this.oAuthFactory = oAuthFactory;
+        this.httpClient = httpClient;
     }
 
     // ------------------------------------------
@@ -81,69 +89,65 @@ public class TeslaFleetAPIBridgeHandler extends BaseBridgeHandler {
     @Override
     public void initialize() {
         logger.debug("Initializing TeslaFleetBridgeHandler for thing {}", getThing().getUID());
-
-        final Thing thing = getThing();
-        final TeslaFleetAPIBridgeConfiguration cfg = thing.getConfiguration()
-                .as(TeslaFleetAPIBridgeConfiguration.class);
-
-        // Validate mandatory config
-        if (cfg == null) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Missing configuration");
-            return;
-        }
-
-        // Pull essentials
-        this.refreshToken = trimOrNull(cfg.refreshToken);
-        this.pollingIntervalSeconds = cfg.pollingIntervalSeconds > 0 ? cfg.pollingIntervalSeconds : 60;
-
-        // Configure API base (region host, timeouts, etc.)
-        try {
-            api.configure(cfg); // e.g., set baseUrl by region, client credentials if needed, timeouts, etc.
-        } catch (Exception ex) {
-            logger.warn("Failed to configure TeslaFleetApi: {}", ex.getMessage(), ex);
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Invalid API configuration");
-            return;
-        }
-
-        // First token acquisition/refresh (if we already have a refresh token)
-        if (this.refreshToken == null) {
-            // In molti flussi third‑party sarà la servlet di auth a popolare il
-            // refreshToken sul bridge
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
-                    "Authorization required (no refresh token present)");
-            schedulePolling(false); // mantieni polling leggero per check di stato/attesa autorizzazione
-            return;
-        }
-
-        if (!ensureValidAccessToken()) {
-            // Se non riusciamo a generare l’access token, restiamo OFFLINE
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                    "Unable to obtain access token from Tesla");
-            // Pianifica retry periodico: l’utente potrebbe completare l’autorizzazione o
-            // correggere le credenziali
-            schedulePolling(false);
-            return;
-        }
-
-        // Quick connectivity check: per esempio, prova a leggere la lista veicoli
-        if (checkConnectivity()) {
-            updateStatus(ThingStatus.ONLINE);
-        } else {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Cannot reach Tesla Fleet API");
-        }
-
-        // Start polling loop
-        schedulePolling(true);
+        updateStatus(ThingStatus.UNKNOWN);
+        active = true;
+        configuration = getConfigAs(TeslaFleetAPIBridgeConfiguration.class);
+        OAuthClientService oAuthService = oAuthFactory.createOAuthClientService(thing.getUID().getAsString(),
+                TESLA_AUTHORIZE_URL, null, configuration.clientId, configuration.clientSecret, SPOTIFY_SCOPES, true);
+        this.oAuthService = oAuthService;
+        oAuthService.addAccessTokenRefreshListener(TeslaFleetAPIBridgeHandler.this);
     }
 
     @Override
     public void dispose() {
         logger.debug("Disposing TeslaFleetBridgeHandler {}", getThing().getUID());
-        cancelPolling();
-        this.accessToken = null;
-        this.refreshToken = null;
-        this.accessTokenExpiresAtEpochSec = 0L;
-        super.dispose();
+        OAuthClientService oAuthService = this.oAuthService;
+        if (oAuthService != null) {
+            oAuthService.removeAccessTokenRefreshListener(this);
+            oAuthFactory.ungetOAuthService(thing.getUID().getAsString());
+            this.oAuthService = null;
+        }
+    }
+
+    @Override
+    public boolean isOnline() {
+        return thing.getStatus() == ThingStatus.ONLINE;
+    }
+
+    @Override
+    public String formatAuthorizationUrl(String redirectUri) {
+        try {
+            OAuthClientService oAuthService = this.oAuthService;
+            if (oAuthService == null) {
+                throw new OAuthException("OAuth service is not initialized");
+            }
+            return oAuthService.getAuthorizationUrl(redirectUri, null, thing.getUID().getAsString());
+        } catch (final OAuthException e) {
+            logger.debug("Error constructing AuthorizationUrl: ", e);
+            return "";
+        }
+    }
+
+    @Override
+    public String authorize(String redirectUri, String reqCode) {
+        try {
+            OAuthClientService oAuthService = this.oAuthService;
+            if (oAuthService == null) {
+                throw new OAuthException("OAuth service is not initialized");
+            }
+            logger.debug("Make call to Tesla to get access token.");
+            final AccessTokenResponse credentials = oAuthService.getAccessTokenResponseByAuthorizationCode(reqCode,
+                    redirectUri);
+            final String user = updateProperties(credentials);
+            logger.debug("Authorized for user: {}", user);
+            startPolling();
+            return user;
+        } catch (RuntimeException | OAuthException | IOException e) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, e.getMessage());
+            throw new SpotifyException(e.getMessage(), e);
+        } catch (final OAuthResponseException e) {
+            throw new SpotifyAuthorizationException(e.getMessage(), e);
+        }
     }
 
     // ------------------------------------------
