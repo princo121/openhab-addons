@@ -12,7 +12,55 @@
  */
 package org.openhab.binding.worxlandroid.internal.handler;
 
-import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.*;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ACTION;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_BLADE_TIME;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_BLADE_TIME_TOTAL;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_CHARGE_CYCLES;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_CHARGE_CYCLES_TOTAL;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_CHARGING;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_COMMAND;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_DELAY;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_DISTANCE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_DURATION;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_EDGECUT;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ENABLE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ERROR_CODE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_LAST_ZONE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_LEVEL;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_LOCK;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_MODE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ONLINE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ONLINE_TIMESTAMP;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_PITCH;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_POLL;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_PREFIX_ALLOCATION;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_PREFIX_ZONE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_RAIN_COUNTER;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_RAIN_STATE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_ROLL;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_RSSI;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_START;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_STATUS_CODE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_STOP;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_TEMPERATURE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_TIME;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_TIMESTAMP;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_TIME_EXTENSION;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_TOTAL_TIME;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_VOLTAGE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_WIFI_QUALITY;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.CHANNEL_YAW;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_AWS;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_BATTERY;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_COMMON;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_CONFIG;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_METRICS;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_MULTI_ZONES;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_ONE_TIME;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_ORIENTATION;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_RAIN;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_SCHEDULE;
+import static org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants.GROUP_WIFI;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -24,6 +72,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +84,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.worxlandroid.internal.api.WebApiException;
 import org.openhab.binding.worxlandroid.internal.api.WorxApiDeserializer;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatus;
 import org.openhab.binding.worxlandroid.internal.api.dto.Commands.MowerCommand;
 import org.openhab.binding.worxlandroid.internal.api.dto.Commands.OneTimeCommand;
 import org.openhab.binding.worxlandroid.internal.api.dto.Commands.ScheduleCommand;
@@ -49,6 +99,8 @@ import org.openhab.binding.worxlandroid.internal.codes.WorxLandroidActionCodes;
 import org.openhab.binding.worxlandroid.internal.codes.WorxLandroidDayCodes;
 import org.openhab.binding.worxlandroid.internal.codes.WorxLandroidStatusCodes;
 import org.openhab.binding.worxlandroid.internal.config.MowerConfiguration;
+import org.openhab.binding.worxlandroid.internal.model.MowerStatus;
+import org.openhab.binding.worxlandroid.internal.model.MowerStatusMapper;
 import org.openhab.binding.worxlandroid.internal.vo.Mower;
 import org.openhab.binding.worxlandroid.internal.vo.ScheduledDay;
 import org.openhab.core.i18n.TimeZoneProvider;
@@ -92,17 +144,26 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
 
     @Override
     public void initialize() {
+        logger.debug("0A - mirko ");
         super.initialize();
+        logger.debug("0B - mirko ");
         MowerConfiguration config = getConfigAs(MowerConfiguration.class);
 
+        logger.debug("0C - mirko = {}", config.toString());
+
         if (config.serialNumber.isBlank()) {
+            logger.debug("0D - mirko ");
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/conf-error-no-serial");
+            logger.debug("0E - mirko ");
             return;
         }
-
+        logger.debug("0F - mirko ");
         WorxLandroidBridgeHandler bridgeHandler = getBridgeHandler(getBridge(), WorxLandroidBridgeHandler.class);
+        logger.debug("0G - mirko =  {}", bridgeHandler.toString());
         if (bridgeHandler != null) {
+            logger.debug("0H - mirko ");
             initializeData(bridgeHandler);
+            logger.debug("0I - mirko ");
         }
     }
 
@@ -125,19 +186,35 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
 
     private void initializeData(WorxLandroidBridgeHandler bridgeHandler) {
         MowerConfiguration config = getConfigAs(MowerConfiguration.class);
-        logger.debug("Initializing WorxLandroidMowerHandler for serial number '{}'", config.serialNumber);
-        try {
-            ProductItemStatus product = bridgeHandler.retrieveDeviceStatus(config.serialNumber);
-            if (product != null) {
-                connectAws(product.mqttEndpoint, product.uuid, product.userId, product.mqttTopics.commandOut);
-                Mower newMower = new Mower(this, product);
-                mower = newMower;
-                setChannelsAndProperties(newMower);
-                processStatusMessage(newMower);
 
-                updateStatus(product.online ? ThingStatus.ONLINE : ThingStatus.OFFLINE);
-                startScheduledJobs(bridgeHandler, newMower, config);
+        logger.debug("Initializing WorxLandroidMowerHandler for serial number '{}'", config.serialNumber);
+
+        try {
+            AbstractProductItemStatus dto = bridgeHandler.retrieveDeviceStatus(config.serialNumber);
+
+            if (dto != null) {
+
+                // 🔹 connessione AWS (serve DTO base)
+                connectAws(dto.mqttEndpoint, dto.uuid, dto.userId, dto.mqttTopics.commandOut);
+
+                // 🔹 Mower (solo se compatibile)
+                if (dto instanceof ProductItemStatus product) {
+
+                    Mower newMower = new Mower(this, product);
+                    this.mower = newMower;
+
+                    setChannelsAndProperties(newMower);
+                    processStatusMessage(newMower);
+
+                    updateStatus(product.online ? ThingStatus.ONLINE : ThingStatus.OFFLINE);
+
+                    startScheduledJobs(bridgeHandler, newMower, config);
+
+                } else {
+                    logger.warn("Unsupported mower type: {}", dto.getClass().getSimpleName());
+                }
             }
+
         } catch (WebApiException e) {
             logger.warn("initialize mower: id {} - {}::{}", config.serialNumber, getThing().getLabel(),
                     getThing().getUID());
@@ -161,32 +238,50 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
         }
 
         if (!mower.multiZoneSupported()) { // multizone channels only when supported
+            logger.debug("setChannelsAndProperties - 1");
             toRemove.add(getChannelUID(GROUP_MULTI_ZONES, CHANNEL_LAST_ZONE));
-
+            logger.debug("setChannelsAndProperties - 2");
             // remove zone meter channels
             IntStream.range(0, mower.getMultiZoneCount())
                     .forEach(index -> toRemove.add(getChannelUID(GROUP_MULTI_ZONES, "zone-%d".formatted(index + 1))));
+            logger.debug("setChannelsAndProperties - 3");
             // remove allocation channels
+            // IntStream.range(0, 10)
+            // .forEach(index -> toRemove.add(getChannelUID(GROUP_MULTI_ZONES,
+            // "%s-%d".formatted(CHANNEL_PREFIX_ALLOCATION, index))));
             IntStream.range(0, 10).forEach(index -> toRemove
-                    .add(getChannelUID(GROUP_MULTI_ZONES, "%s-%d".formatted(CHANNEL_PREFIX_ALLOCATION, index))));
+                    .add(getChannelUID(GROUP_MULTI_ZONES, CHANNEL_PREFIX_ALLOCATION.formatted(index))));
+            logger.debug("setChannelsAndProperties - 4");
         }
 
         if (!mower.oneTimeSchedulerSupported()) { // oneTimeScheduler channel only when supported
+            logger.debug("setChannelsAndProperties - 5");
             toRemove.addAll(getChannelUIDs(GROUP_ONE_TIME, Set.of(CHANNEL_DURATION, CHANNEL_EDGECUT, CHANNEL_MODE)));
+            logger.debug("setChannelsAndProperties - 6");
         }
 
         if (!mower.scheduler2Supported()) { // Scheduler 2 channels only when supported version
+            logger.debug("setChannelsAndProperties - 7");
             EnumSet.allOf(WorxLandroidDayCodes.class).stream()
                     .map(dayCode -> "%s2".formatted(dayCode.getDescription().toLowerCase(Locale.ROOT)))
                     .forEach(groupName -> toRemove.addAll(getChannelUIDs(groupName,
                             Set.of(CHANNEL_ENABLE, CHANNEL_DURATION, CHANNEL_EDGECUT, CHANNEL_TIME))));
+            logger.debug("setChannelsAndProperties - 8");
         }
 
+        logger.debug("setChannelsAndProperties - 9");
         toRemove.stream().forEach(thingBuilder::withoutChannel);
+        logger.debug("setChannelsAndProperties - 10");
         updateThing(thingBuilder.build());
+        logger.debug("setChannelsAndProperties - 11 - MAC ADDRESS = {},", mower.getMacAddress());
+        logger.debug("setChannelsAndProperties - 11 - vendor = {},", "Worx");
+        logger.debug("setChannelsAndProperties - 11 - product_id = {},", mower.getId());
+        logger.debug("setChannelsAndProperties - 11 - Language = {},", mower.getLanguage());
+        logger.debug("setChannelsAndProperties - 11 - mqtt_endpoint = {},", endpoint);
 
-        updateProperties(Map.of(Thing.PROPERTY_MAC_ADDRESS, mower.getMacAddress(), Thing.PROPERTY_VENDOR, "Worx",
+        updateProperties(Map.of(Thing.PROPERTY_SERIAL_NUMBER, mower.getSerialNumber(), Thing.PROPERTY_VENDOR, "Worx",
                 "productId", mower.getId(), "language", mower.getLanguage(), "mqtt_endpoint", endpoint));
+        logger.debug("setChannelsAndProperties - 12");
     }
 
     private void processStatusMessage(Mower mower) {
@@ -204,10 +299,19 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
         if (config.refreshStatusInterval > 0) {
             refreshJob = scheduler.scheduleWithFixedDelay(() -> {
                 try {
-                    ProductItemStatus product = bridgeHandler.retrieveDeviceStatus(config.serialNumber);
+                    AbstractProductItemStatus productDto = bridgeHandler.retrieveDeviceStatus(config.serialNumber);
+                    MowerStatus mower = MowerStatusMapper.map(productDto);
+
                     updateChannelDateTime(GROUP_COMMON, CHANNEL_ONLINE_TIMESTAMP, Instant.now());
-                    updateChannelOnOff(GROUP_COMMON, CHANNEL_ONLINE, product != null && product.online);
-                    updateStatus(product != null ? ThingStatus.ONLINE : ThingStatus.OFFLINE);
+                    updateChannelOnOff(GROUP_COMMON, CHANNEL_ONLINE, mower.isOnline());
+                    updateStatus(mower.isOnline() ? ThingStatus.ONLINE : ThingStatus.OFFLINE);
+
+                    /*
+                     * AbstractProductItemStatus product = bridgeHandler.retrieveDeviceStatus(config.serialNumber);
+                     * updateChannelDateTime(GROUP_COMMON, CHANNEL_ONLINE_TIMESTAMP, Instant.now());
+                     * updateChannelOnOff(GROUP_COMMON, CHANNEL_ONLINE, product != null && product.online);
+                     * updateStatus(product != null ? ThingStatus.ONLINE : ThingStatus.OFFLINE);
+                     */
                 } catch (WebApiException e) {
                     logger.debug("Refreshing Thing {} failed, handler might be OFFLINE", config.serialNumber);
                 }
@@ -461,7 +565,14 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
      * @param zoneId
      */
     private void updateStateCfg(Mower theMower) {
-        updateChannelDateTime(GROUP_CONFIG, CHANNEL_TIMESTAMP, theMower.getLastUpdate());
+
+        ZonedDateTime lastUpdate = theMower.getLastUpdate();
+        if (lastUpdate != null) {
+            updateChannelDateTime(GROUP_CONFIG, CHANNEL_TIMESTAMP, lastUpdate);
+        }
+        // ZonedDateTime lastUpdate = theMower.getLastUpdate();
+        // updateChannelDateTime(GROUP_CONFIG, CHANNEL_TIMESTAMP, lastUpdate != null ? lastUpdate : null);
+        // updateChannelDateTime(GROUP_CONFIG, CHANNEL_TIMESTAMP, theMower.getLastUpdate());
 
         theMower.getOneTimeSchedule().ifPresent(ots -> {
             updateChannelOnOff(GROUP_ONE_TIME, CHANNEL_EDGECUT, ots.getEdgeCut());
@@ -470,9 +581,9 @@ public class WorxLandroidMowerHandler extends AWSClientThingHandler {
         });
 
         theMower.getSchedule().ifPresent(schedule -> {
-            if (theMower.oneTimeSchedulerSupported()) {
-                updateChannelEnum(GROUP_SCHEDULE, CHANNEL_MODE, schedule.scheduleMode);
-            }
+
+            Optional.ofNullable(schedule.scheduleMode)
+                    .ifPresent(mode -> updateChannelEnum(GROUP_SCHEDULE, CHANNEL_MODE, mode));
 
             if (schedule.timeExtension != -1) {
                 updateChannelQuantity(GROUP_SCHEDULE, CHANNEL_TIME_EXTENSION, schedule.timeExtension, Units.PERCENT);

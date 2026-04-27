@@ -21,6 +21,8 @@ import java.util.List;
 import org.openhab.binding.worxlandroid.internal.codes.WorxLandroidErrorCodes;
 import org.openhab.binding.worxlandroid.internal.codes.WorxLandroidStatusCodes;
 
+import com.google.gson.JsonElement;
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -55,6 +57,7 @@ public class Payload {
 
     public class Rain {
         @SerializedName("s")
+        @JsonAdapter(FlexibleBooleanDeserializer.class)
         public Boolean raining;
         @SerializedName("cnt")
         public int counter = -1;
@@ -89,6 +92,7 @@ public class Payload {
         @SerializedName("nr")
         public int chargeCycle = -1;
         @SerializedName("c")
+        @JsonAdapter(FlexibleBooleanDeserializer.class)
         public Boolean charging;
         public int m;
     }
@@ -114,8 +118,10 @@ public class Payload {
         public String lg = ""; // en, fr...
         public int cmd = -1;
         public Schedule sc;
-        @SerializedName("mz")
-        public List<Integer> multiZones = List.of();
+        // @SerializedName("mz")
+        // public List<Integer> multiZones = List.of();
+        // public Mz mz;
+        public JsonElement mz;
         @SerializedName("mzv")
         public List<Integer> multizoneAllocations = List.of();
         @SerializedName("rd")
@@ -128,12 +134,36 @@ public class Payload {
         public Modules modules;
 
         public Instant getDateTime() {
-            if (dt.isEmpty() || tm.isEmpty()) {
+            if (dt == null || dt.isEmpty() || tm == null || tm.isEmpty()) {
                 return null;
             }
 
             LocalDateTime localDateTime = LocalDateTime.parse("%s %s".formatted(dt, tm), FORMATTER);
+
             return localDateTime.atZone(ZoneOffset.UTC).toInstant();
+        }
+
+        public class Mz {
+
+            public List<MzSlot> s; // zones
+            public List<Object> p; // spesso vuoto
+        }
+
+        public class MzSlot {
+            public int id;
+            public int c;
+            public MzCfg cfg;
+        }
+
+        public class MzCfg {
+            public Cut cut;
+        }
+
+        public class Cut {
+            public int b;
+            public int bd;
+            public int ob;
+            public List<Integer> z;
         }
     }
 
@@ -144,6 +174,8 @@ public class Payload {
             ROLL,
             YAW;
         }
+
+        public String tm;
 
         private int lk = -1;
         @SerializedName("dmp")

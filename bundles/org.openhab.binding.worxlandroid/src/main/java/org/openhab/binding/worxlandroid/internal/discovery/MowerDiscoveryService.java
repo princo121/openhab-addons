@@ -20,7 +20,7 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.worxlandroid.internal.WorxLandroidBindingConstants;
 import org.openhab.binding.worxlandroid.internal.api.WebApiException;
-import org.openhab.binding.worxlandroid.internal.api.dto.ProductItemStatus;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatus;
 import org.openhab.binding.worxlandroid.internal.config.MowerConfiguration;
 import org.openhab.binding.worxlandroid.internal.handler.WorxLandroidBridgeHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
@@ -60,8 +60,13 @@ public class MowerDiscoveryService extends AbstractDiscoveryService {
     @Override
     protected void startScan() {
         try {
-            List<ProductItemStatus> productItemsStatusResponse = bridgeHandler.retrieveAllDevices();
+            logger.debug("MowerDiscoveryService - 1");
+            List<AbstractProductItemStatus> productItemsStatusResponse = bridgeHandler.retrieveAllDevices();
+            logger.debug("MowerDiscoveryService - 2");
             productItemsStatusResponse.forEach(mower -> {
+                logger.debug("MowerDiscoveryService - 3A == {}", bridgeHandler.getThing().getUID());
+                logger.debug("MowerDiscoveryService - 3B == {}", mower.id);
+                logger.debug("MowerDiscoveryService - 3C == {}", mower.name);
 
                 DiscoveryResult discoveryResult = DiscoveryResultBuilder
                         .create(new ThingUID(THING_TYPE_MOWER, bridgeHandler.getThing().getUID(), mower.id))
@@ -73,6 +78,7 @@ public class MowerDiscoveryService extends AbstractDiscoveryService {
                 logger.debug("Discovered a mower thing with ID '{}'", mower.serialNumber);
             });
         } catch (WebApiException exception) {
+            logger.debug("MowerDiscoveryService - 4");
             logger.warn("Error in WebApiException : {}", exception.getMessage());
         }
     }

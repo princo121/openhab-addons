@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.worxlandroid.internal.vo;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -266,8 +267,15 @@ public class Mower {
         return Arrays.stream(zoneMeter).sum() == 0;
     }
 
+    // public int getMultiZoneCount() {
+    // return multiZoneSupported() ? product.lastStatus.payload.cfg.multizoneAllocations.size() : 0;
+    // }
+
     public int getMultiZoneCount() {
-        return multiZoneSupported() ? product.lastStatus.payload.cfg.multizoneAllocations.size() : 0;
+        if (!multiZoneSupported()) {
+            return 0;
+        }
+        return extractMultiZones(product.lastStatus.payload.cfg).size();
     }
 
     public String getMqttCommandIn() {
@@ -324,15 +332,67 @@ public class Mower {
         });
 
         Cfg cfg = getPayloadCfg();
+
         if (multiZoneSupported()) {
-            for (int zoneIndex = 0; zoneIndex < cfg.multiZones.size(); zoneIndex++) {
-                setZoneMeter(zoneIndex, cfg.multiZones.get(zoneIndex));
+
+            List<Integer> zones = extractMultiZones(cfg);
+
+            for (int i = 0; i < zones.size(); i++) {
+                setZoneMeter(i, zones.get(i));
             }
 
-            for (int allocationIndex = 0; allocationIndex < cfg.multizoneAllocations.size(); allocationIndex++) {
-                setAllocation(allocationIndex, cfg.multizoneAllocations.get(allocationIndex));
+            if (cfg.multizoneAllocations != null) {
+                for (int i = 0; i < cfg.multizoneAllocations.size(); i++) {
+                    setAllocation(i, cfg.multizoneAllocations.get(i));
+                }
             }
         }
+        /*
+         * if (multiZoneSupported()) {
+         * for (int zoneIndex = 0; zoneIndex < cfg.multiZones.size(); zoneIndex++) {
+         * setZoneMeter(zoneIndex, cfg.multiZones.get(zoneIndex));
+         * }
+         * 
+         * for (int allocationIndex = 0; allocationIndex < cfg.multizoneAllocations.size(); allocationIndex++) {
+         * setAllocation(allocationIndex, cfg.multizoneAllocations.get(allocationIndex));
+         * }
+         * }
+         */
+    }
+
+    private List<Integer> extractMultiZones(Cfg cfg) {
+        if (cfg.mz == null) {
+            return List.of();
+        }
+
+        // 🔹 caso WIRED → array
+        if (cfg.mz.isJsonArray()) {
+            List<Integer> result = new ArrayList<>();
+            cfg.mz.getAsJsonArray().forEach(e -> result.add(e.getAsInt()));
+            return result;
+        }
+
+        // 🔹 caso VISION → object
+        if (cfg.mz.isJsonObject()) {
+            List<Integer> result = new ArrayList<>();
+
+            var obj = cfg.mz.getAsJsonObject();
+            var slots = obj.getAsJsonArray("s");
+
+            if (slots != null) {
+                slots.forEach(e -> {
+                    var slot = e.getAsJsonObject();
+                    var cut = slot.getAsJsonObject("cfg").getAsJsonObject("cut");
+
+                    // 👉 scegli cosa usare (bd è il più sensato)
+                    result.add(cut.get("bd").getAsInt());
+                });
+            }
+
+            return result;
+        }
+
+        return List.of();
     }
 
     private void updateSchedules(int scDSlot, List<List<String>> d) {
@@ -399,8 +459,9 @@ public class Mower {
         mowerHandler.publishMessage(getMqttCommandIn(), command);
     }
 
-    public ZonedDateTime getLastUpdate() {
-        return getPayloadCfg().getDateTime().atZone(product.timeZone);
+    public @Nullable ZonedDateTime getLastUpdate() {
+        Instant dt = getPayloadCfg().getDateTime();
+        return dt != null ? dt.atZone(product.timeZone) : null;
     }
 
     public Optional<Schedule> getSchedule() {

@@ -1,0 +1,11 @@
+<models>
+	<model>
+		<id>73</id>
+		<type>VISION</type>
+	</model>
+
+	<model>
+		<id>19</id>
+		<type>WIRED</type>
+	</model>
+</models>

@@ -18,15 +18,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The {@link ProductItemStatus} class
+ * The {@link ProductItemStatusVision} class
  *
  * @author Gaël L'hopital - Initial contribution
  *
  */
-public class ProductItemStatus extends AbstractProductItemStatus {
+public class ProductItemStatusVision extends ProductItemStatus {
 
     public class Accessories {
         public boolean ultrasonic;
+    }
+
+    public class MqttTopics {
+        public String commandIn;
+        public String commandOut;
     }
 
     public class SetupLocation {
@@ -67,29 +72,37 @@ public class ProductItemStatus extends AbstractProductItemStatus {
         public String soilType;
     }
 
+    // public String id;
+    // public String uuid;
     // public int productId;
-    // public String userId;
+    // public StringsrId;
+    public String serialNumber;
     public String macAddress;
     public boolean locked;
     public String firmwareVersion;
     public boolean firmwareAutoUpgrade;
-    public boolean pushNotifications;
     public Sim sim;
-    public String pushNotificationsLevel;
     public boolean test;
     public boolean iotRegistered;
     public boolean mqttRegistered;
-    public String pinCode;
     public String registeredAt;
-    // public String mqttEndpoint;
-    public AppSettings appSettings;
+    // public boolean online;
     public int protocol;
     public String pendingRadioLinkValidation;
     public List<String> capabilities;
     public List<String> capabilitiesAvailable;
-    public Accessories accessories;
+    // public String mqttEndpoint;
     // public MqttTopics mqttTopics;
+    public String name;
+    public long bladeHeightShift;
+    public boolean pushNotifications;
+    public String pushNotificationsLevel;
+    public String pinCode;
+    public AppSettings appSettings;
     public boolean warrantyRegistered;
+
+    public Accessories accessories;
+
     public String purchasedAt;
     public String warrantyExpiresAt;
     public SetupLocation setupLocation;

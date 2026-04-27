@@ -21,8 +21,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.worxlandroid.internal.api.WebApiException;
 import org.openhab.binding.worxlandroid.internal.api.WorxApiHandler;
-import org.openhab.binding.worxlandroid.internal.api.dto.ProductItemStatus;
-import org.openhab.binding.worxlandroid.internal.api.dto.UsersMeResponse;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatus;
 import org.openhab.binding.worxlandroid.internal.config.WebApiConfiguration;
 import org.openhab.core.auth.client.oauth2.AccessTokenRefreshListener;
 import org.openhab.core.auth.client.oauth2.AccessTokenResponse;
@@ -67,10 +66,14 @@ public class WorxLandroidBridgeHandler extends BaseBridgeHandler
 
     public WorxLandroidBridgeHandler(Bridge bridge, WorxApiHandler apiHandler, OAuthFactory oAuthFactory) {
         super(bridge);
+        logger.debug("WorxLandroidBridgeHandler - 1");
         this.apiHandler = apiHandler;
+        logger.debug("WorxLandroidBridgeHandler - 2");
         this.oAuthFactory = oAuthFactory;
+        logger.debug("WorxLandroidBridgeHandler - 3");
         this.oAuthClientService = oAuthFactory.createOAuthClientService(getThing().getUID().getAsString(),
                 URL_OAUTH_TOKEN, null, CLIENT_ID, null, "*", true);
+        logger.debug("WorxLandroidBridgeHandler - 4");
         oAuthClientService.addAccessTokenRefreshListener(this);
     }
 
@@ -79,35 +82,52 @@ public class WorxLandroidBridgeHandler extends BaseBridgeHandler
         logger.debug("Initializing Landroid API bridge handler.");
         WebApiConfiguration config = getConfigAs(WebApiConfiguration.class);
 
+        logger.debug("Initializing Landroid API bridge handler.: 1");
         if (config.username.isBlank()) {
+            logger.debug("Initializing Landroid API bridge handler.: 2");
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/conf-error-no-username");
             return;
         }
 
+        logger.debug("Initializing Landroid API bridge handler.: 3");
         if (config.password.isBlank()) {
+            logger.debug("Initializing Landroid API bridge handler.: 4");
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/conf-error-no-password");
             return;
         }
 
+        logger.debug("Initializing Landroid API bridge handler.: 5");
         updateStatus(ThingStatus.UNKNOWN);
+        logger.debug("Initializing Landroid API bridge handler.: 6");
         scheduler.execute(() -> initiateConnection(config.username, config.password));
     }
 
     private void initiateConnection(String username, String password) {
+        logger.debug("initiateConnection : 1");
         stopConnectionJob();
+        logger.debug("initiateConnection : 2");
         try {
+            logger.debug("initiateConnection : 3");
             String token = oAuthClientService.getAccessTokenByResourceOwnerPasswordCredentials(username, password, "*")
                     .getAccessToken();
+            logger.debug("initiateConnection : 4");
             if (token != null) {
+                logger.debug("initiateConnection : 5 -- {} ", token);
                 accessToken = token;
-                UsersMeResponse user = apiHandler.retrieveMe(accessToken);
-                updateProperties(apiHandler.getDeserializer().toMap(user));
+                logger.debug("initiateConnection : 5A -- {} ", accessToken);
+                // UsersMeResponse user = apiHandler.retrieveMe(accessToken);
+                logger.debug("initiateConnection : 6");
+                // updateProperties(apiHandler.getDeserializer().toMap(user));
+                logger.debug("initiateConnection : 7");
 
                 updateStatus(ThingStatus.ONLINE);
+                logger.debug("initiateConnection : 8");
             }
-        } catch (IOException | WebApiException e) {
+        } catch (IOException e) {
+            logger.debug("initiateConnection  error : {} ", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } catch (OAuthResponseException e) {
+            logger.debug("initiateConnection  error 1 : {} ", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/oauth-connection-error");
         } catch (OAuthException e) {
             Throwable cause = e.getCause();
@@ -120,6 +140,7 @@ public class WorxLandroidBridgeHandler extends BaseBridgeHandler
                     return;
                 }
             }
+            logger.debug("initiateConnection  error 2: {} ", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "@text/oauth-connection-error");
         }
     }
@@ -190,11 +211,11 @@ public class WorxLandroidBridgeHandler extends BaseBridgeHandler
         return accessToken;
     }
 
-    public @Nullable ProductItemStatus retrieveDeviceStatus(String serialNumber) throws WebApiException {
-        return apiHandler.retrieveDeviceStatus(accessToken, serialNumber);
+    public @Nullable AbstractProductItemStatus retrieveDeviceStatus(String serialNumber) throws WebApiException {
+        return this.apiHandler.retrieveDeviceStatus(accessToken, serialNumber);
     }
 
-    public List<ProductItemStatus> retrieveAllDevices() throws WebApiException {
+    public List<AbstractProductItemStatus> retrieveAllDevices() throws WebApiException {
         return apiHandler.retrieveDeviceStatus(accessToken);
     }
 

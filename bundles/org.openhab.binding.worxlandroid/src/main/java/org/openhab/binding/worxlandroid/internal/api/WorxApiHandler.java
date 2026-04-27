@@ -24,7 +24,7 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
-import org.openhab.binding.worxlandroid.internal.api.dto.ProductItemStatus;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatus;
 import org.openhab.binding.worxlandroid.internal.api.dto.UsersMeResponse;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.osgi.service.component.annotations.Activate;
@@ -47,9 +47,9 @@ public class WorxApiHandler {
     private static final String URL_PRODUCT_ITEMS = URL_BASE + "product-items";
     private static final String URL_USERS_ME = URL_BASE + "users/me";
 
-    private static final Type PRODUCT_ITEM_STATUS_LIST = new TypeToken<List<ProductItemStatus>>() {
+    private static final Type PRODUCT_ITEM_STATUS_LIST = new TypeToken<List<AbstractProductItemStatus>>() {
     }.getType();
-    private static final Type PRODUCT_ITEM_STATUS = new TypeToken<ProductItemStatus>() {
+    private static final Type PRODUCT_ITEM_STATUS = new TypeToken<AbstractProductItemStatus>() {
     }.getType();
     private static final Type USERS_ME = new TypeToken<UsersMeResponse>() {
     }.getType();
@@ -65,18 +65,30 @@ public class WorxApiHandler {
         this.deserializer = deserializer;
     }
 
+    /*
+     * private Request buildRequest(String url, String accessToken, HttpMethod method) {
+     * Request request = httpClient.newRequest(url).method(method);
+     * request.header(HttpHeader.AUTHORIZATION, "Bearer %s".formatted(accessToken));
+     * request.header(HttpHeader.CONTENT_TYPE, "application/json; utf-8");
+     * request.timeout(15, TimeUnit.SECONDS);
+     * return request;
+     * }
+     */
+
     private Request buildRequest(String url, String accessToken, HttpMethod method) {
         Request request = httpClient.newRequest(url).method(method);
+
         request.header(HttpHeader.AUTHORIZATION, "Bearer %s".formatted(accessToken));
-        request.header(HttpHeader.CONTENT_TYPE, "application/json; utf-8");
+        request.header(HttpHeader.CONTENT_TYPE, "application/json; charset=utf-8");
+        request.header(HttpHeader.ACCEPT, "application/json");
+        request.header(HttpHeader.USER_AGENT, "openHAB");
+
         request.timeout(15, TimeUnit.SECONDS);
         return request;
     }
 
     private <T> T apiGet(String url, String accessToken, Type type) throws WebApiException {
         Request request = buildRequest(url, accessToken, HttpMethod.GET);
-
-        logger.debug("URI: {}", request.getURI().toString());
         try {
             ContentResponse response = request.send();
             if (response.getStatus() == 200) {
@@ -107,15 +119,16 @@ public class WorxApiHandler {
         return deserializer;
     }
 
-    public List<ProductItemStatus> retrieveDeviceStatus(String token) throws WebApiException {
+    public List<AbstractProductItemStatus> retrieveDeviceStatus(String token) throws WebApiException {
         return apiGet("%s?status=1".formatted(URL_PRODUCT_ITEMS), token, PRODUCT_ITEM_STATUS_LIST);
     }
 
-    public ProductItemStatus retrieveDeviceStatus(String token, String serialNumber) throws WebApiException {
+    public AbstractProductItemStatus retrieveDeviceStatus(String token, String serialNumber) throws WebApiException {
         return apiGet("%s/%s?status=1".formatted(URL_PRODUCT_ITEMS, serialNumber), token, PRODUCT_ITEM_STATUS);
     }
 
     public UsersMeResponse retrieveMe(String token) throws WebApiException {
+        logger.debug("retrieveMe");
         return apiGet(URL_USERS_ME, token, USERS_ME);
     }
 

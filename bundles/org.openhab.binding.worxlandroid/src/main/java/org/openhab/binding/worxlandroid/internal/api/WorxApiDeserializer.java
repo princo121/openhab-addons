@@ -19,10 +19,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatus;
+import org.openhab.binding.worxlandroid.internal.api.dto.AbstractProductItemStatusDeserializer;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 
@@ -47,7 +48,9 @@ public class WorxApiDeserializer {
 
     @Activate
     public WorxApiDeserializer() {
-        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+
+        GsonBuilder builder = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .registerTypeAdapter(AbstractProductItemStatus.class, new AbstractProductItemStatusDeserializer())
                 .registerTypeAdapter(ZoneId.class,
                         (JsonDeserializer<ZoneId>) (json, type, context) -> ZoneId
                                 .of(json.getAsJsonPrimitive().getAsString()))
@@ -60,10 +63,9 @@ public class WorxApiDeserializer {
                         odt = OffsetDateTime.parse(value + 'Z', WORX_FORMATTER);
                     }
                     return odt.toInstant();
-                }).registerTypeAdapter(Boolean.class, (JsonDeserializer<Boolean>) (json, type, context) -> {
-                    String value = json.getAsJsonPrimitive().getAsString().toUpperCase(Locale.ROOT);
-                    return "1".equals(value);
-                }).create();
+                }).registerTypeAdapter(AbstractProductItemStatus.class, new AbstractProductItemStatusDeserializer());
+
+        gson = builder.create();
     }
 
     public String toJson(Object object) {
